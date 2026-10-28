@@ -143,8 +143,10 @@ export default function Home() {
   }, [busqueda, categoriaSel, presentacionSel]);
 
   // FILTRADO LÓGICO DE PEDIDOS EN EL PANEL ADMIN POR FECHAS Y DEPARTAMENTOS
-  // (la fecha actual se calcula aquí dentro, solo cuando ya hay pedidos cargados en el navegador)
+  // (sin pedidos cargados no se lee la fecha, así no se ejecuta new Date() durante el prerender)
   const pedidosFiltradosAdmin = useMemo(() => {
+    if (pedidosSupabase.length === 0) return pedidosSupabase;
+
     const ahora = new Date();
     const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
 
