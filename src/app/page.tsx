@@ -128,10 +128,6 @@ export default function Home() {
   // Pedido Seleccionado para Ver Factura / Imprimir
   const [pedidoParaImprimir, setPedidoParaImprimir] = useState<PedidoGuardado | null>(null);
 
-  // Estado para prevenir el error de prerenderizado estático en Next.js con new Date()
-  // Fecha de referencia para los filtros del panel admin (se calcula una sola vez al montar)
-const [fechaActualCliente] = useState<Date>(() => new Date());
-
   // Listas de categorías y presentaciones
   const presentaciones = useMemo(() => ["Todas", ...Array.from(new Set(rawCatalog.map((p) => p.presentacion)))], []);
   const categorias = useMemo(() => ["Todas", ...Array.from(new Set(rawCatalog.map((p) => p.categoria)))], []);
@@ -147,19 +143,19 @@ const [fechaActualCliente] = useState<Date>(() => new Date());
   }, [busqueda, categoriaSel, presentacionSel]);
 
   // FILTRADO LÓGICO DE PEDIDOS EN EL PANEL ADMIN POR FECHAS Y DEPARTAMENTOS
+  // (la fecha actual se calcula aquí dentro, solo cuando ya hay pedidos cargados en el navegador)
   const pedidosFiltradosAdmin = useMemo(() => {
-    if (!fechaActualCliente) return pedidosSupabase;
+    const ahora = new Date();
+    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
 
-    const inicioHoy = new Date(fechaActualCliente.getFullYear(), fechaActualCliente.getMonth(), fechaActualCliente.getDate());
-    
     // Inicio de semana (Lunes)
-    const diaSemana = fechaActualCliente.getDay() || 7;
-    const inicioSemana = new Date(fechaActualCliente);
-    inicioSemana.setDate(fechaActualCliente.getDate() - diaSemana + 1);
+    const diaSemana = ahora.getDay() || 7;
+    const inicioSemana = new Date(ahora);
+    inicioSemana.setDate(ahora.getDate() - diaSemana + 1);
     inicioSemana.setHours(0, 0, 0, 0);
 
     // Inicio de mes
-    const inicioMes = new Date(fechaActualCliente.getFullYear(), fechaActualCliente.getMonth(), 1);
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
 
     return pedidosSupabase.filter((ped) => {
       const fechaPed = new Date(ped.created_at);
@@ -185,7 +181,7 @@ const [fechaActualCliente] = useState<Date>(() => new Date());
 
       return cumpleFecha && cumpleDepto && cumpleBusqueda;
     });
-  }, [pedidosSupabase, filtroFechaRango, filtroDeptoAdmin, busquedaClienteAdmin, fechaActualCliente]);
+  }, [pedidosSupabase, filtroFechaRango, filtroDeptoAdmin, busquedaClienteAdmin]);
 
   // Manejo de Cantidades
   const manejarCambioCantTarjeta = (id: number, valor: string) => {
